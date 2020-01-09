@@ -5,7 +5,6 @@ import urllib.parse
 from flask import redirect, render_template, request, session
 from functools import wraps
 
-
 def apology(message, code=400):
     """Render message as an apology to user."""
     def escape(s):
@@ -20,7 +19,6 @@ def apology(message, code=400):
         return s
     return render_template("apology.html", top=code, bottom=escape(message)), code
 
-
 def login_required(f):
     """
     Decorate routes to require login.
@@ -34,11 +32,10 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
 def lookup(symbol):
     """Look up quote for symbol."""
 
-    # Contact API
+    # contact API
     try:
         api_key = os.environ.get("API_KEY")
         response = requests.get(f"https://cloud-sse.iexapis.com/stable/stock/{urllib.parse.quote_plus(symbol)}/quote?token={api_key}")
@@ -46,7 +43,7 @@ def lookup(symbol):
     except requests.RequestException:
         return None
 
-    # Parse response
+    # parse response
     try:
         quote = response.json()
         return {
@@ -56,7 +53,6 @@ def lookup(symbol):
         }
     except (KeyError, TypeError, ValueError):
         return None
-
 
 def usd(value):
     """Format value as USD."""
