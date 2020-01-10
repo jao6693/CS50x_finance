@@ -80,10 +80,14 @@ def quote():
     if request.method == "POST":
         # consume the API to get the latest price
         data = lookup(request.form.get("stock"))
-        # format the amount in USD
-        amount = usd(data["price"])
+        # check for potential errors
+        if data is None:
+            return apology("stock does not exist", 404)
+        else:
+            # format the amount in USD
+            amount = usd(data["price"])
 
-        return render_template("quote_response.html", stock=data["symbol"], name=data["name"], amount=amount)
+            return render_template("quote_response.html", stock=data["symbol"], name=data["name"], amount=amount)
     # user reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("quote_request.html")
