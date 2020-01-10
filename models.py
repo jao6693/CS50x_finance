@@ -25,8 +25,8 @@ class Transaction(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     created_on = db.Column(db.DateTime, server_default=db.func.now())
-    stock_id = db.Column(db.Integer, db.ForeignKey("stock.id"), nullable=False)
-    user_id = person_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    stock_id = db.Column(db.Integer, db.ForeignKey("stocks.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.Text, nullable=False, default="usd")

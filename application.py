@@ -1,4 +1,5 @@
 import os
+import requests
 
 # from cs50 import SQL
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
@@ -49,7 +50,11 @@ app.app_context().push()
 db.create_all()
 
 # make sure API key is set
-if not os.environ.get("API_KEY"):
+if os.environ.get("API_KEY"):
+    api_token = os.environ.get("API_KEY")
+    api_url_base = "https://cloud.iexapis.com/stable/stock/"
+    api_url_suffix = "/quote?token=" + api_token
+else:
     raise RuntimeError("API_KEY not set")
 
 @app.route("/")
@@ -57,7 +62,31 @@ if not os.environ.get("API_KEY"):
 def index():
     """Show portfolio of stocks"""
     print("INDEX")
+
     return render_template("index.html")
+
+@app.route("/quote", methods=["GET", "POST"])
+@login_required
+def quote():
+    """
+    Get stock quote.
+
+    example of API call:
+    https://cloud.iexapis.com/stable/stock/aapl/quote?token=API_TOKEN
+    """
+    print("QUOTE")
+
+    # user reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+        # consume the API to get the latest price
+        data = lookup(request.form.get("stock"))
+        # format the amount in USD
+        amount = usd(data["price"])
+
+        return render_template("quote_response.html", stock=data["symbol"], name=data["name"], amount=amount)
+    # user reached route via GET (as by clicking a link or via redirect)
+    else:
+        return render_template("quote_request.html")
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
@@ -72,17 +101,27 @@ def buy():
     else:
         return render_template("buy.html")
 
+@app.route("/sell", methods=["GET", "POST"])
+@login_required
+def sell():
+    """Sell shares of stock"""
+    print("SELL")
+
+    return apology("TODO")
+
 @app.route("/history")
 @login_required
 def history():
     """Show history of transactions"""
     print("HISTORY")
+
     return apology("TODO")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
     print("LOGIN")
+
     # forget any user_id
     session.clear()
 
@@ -118,23 +157,18 @@ def login():
 def logout():
     """Log user out"""
     print("LOGOUT")
+
     # forget any user_id
     session.clear()
 
     # redirect user to login form
     return redirect("/")
 
-@app.route("/quote", methods=["GET", "POST"])
-@login_required
-def quote():
-    """Get stock quote."""
-    print("QUOTE")
-    return apology("TODO")
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
     print("REGISTER")
+
     # forget any user_id
     session.clear()
 
@@ -182,12 +216,6 @@ def register():
     # user reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("register.html")
-
-@app.route("/sell", methods=["GET", "POST"])
-@login_required
-def sell():
-    """Sell shares of stock"""
-    return apology("TODO")
 
 def errorhandler(e):
     """Handle error"""
