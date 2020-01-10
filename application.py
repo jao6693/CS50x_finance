@@ -8,6 +8,8 @@ from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
 from models import *
+from sqlalchemy import select
+from sqlalchemy.sql import func
 
 from helpers import apology, login_required, lookup, usd
 
@@ -100,7 +102,43 @@ def buy():
 
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
-        pass
+        # consume the API to get the latest price
+        data = lookup(request.form.get("stock"))
+        # check for potential errors
+        if data is None:
+            return apology("stock does not exist", 404)
+        else:
+            # calculate the transaction amount to check whether the user can afford to purchase these stocks
+            amount = int(request.form.get("quantity")) * float(data["price"])
+            # query the DB to get the current balance of the user
+            balance = db.session.query(db.func.sum(Transaction.amount)).filter(Transaction.user_id == session["user_id"]).first()
+            # balance = Transaction.query(func.sum(amount)).filter_by(user_id=session["user_id"])
+            if balance is not None:
+                if float(balance[0]) < amount:
+                    return apology("balance too low", 403)
+
+            # update the transaction & the stock tables
+            stock_exists = Stock.query.filter_by(name=data["name"]).count()
+
+            if stock_exists == 0:
+                stock = Stock(stock=data["symbol"], name=data["name"])
+                # add the stock to the master data
+                db.session.add(stock)
+                # commit changes to get an Id for the stock
+                db.session.commit()
+
+            stock = Stock.query.filter_by(name=data["name"]).first()
+            # add the transaction to the transaction data
+            transaction = Transaction(stock_id=stock.id, user_id=session["user_id"], \
+                quantity=int(request.form.get("quantity")), price=float(data["price"]), amount=amount)
+            # add the transaction to the transaction data
+            db.session.add(transaction)
+            # commit changes to validate the transaction
+            db.session.commit()
+
+            # redirect user to home page
+            return redirect("/")
+
     # user reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("buy.html")

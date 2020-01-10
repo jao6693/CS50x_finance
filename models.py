@@ -28,5 +28,6 @@ class Transaction(db.Model):
     stock_id = db.Column(db.Integer, db.ForeignKey("stocks.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, nullable=False)
     amount = db.Column(db.Float, nullable=False)
-    currency = db.Column(db.Text, nullable=False, default="usd")
+    currency = db.Column(db.Text, nullable=False, default="USD")
