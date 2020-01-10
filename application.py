@@ -45,7 +45,7 @@ print("INITIALIZE")
 db.init_app(app)
 # push the context so that DB operations are performed inside an application context
 app.app_context().push()
-# get models & create corresponding DB tables
+# get models & create corresponding DB tables if necessary
 db.create_all()
 
 # make sure API key is set
@@ -64,7 +64,13 @@ def index():
 def buy():
     """Buy shares of stock"""
     print("BUY")
-    return apology("TODO")
+
+    # user reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+        pass
+    # user reached route via GET (as by clicking a link or via redirect)
+    else:
+        return render_template("buy.html")
 
 @app.route("/history")
 @login_required
