@@ -16,15 +16,25 @@
       </tr>
     </thead>
     <tbody>
+      {% for transaction in transactions %}
+      <tr>
+        <td>{{ transaction.stock }}</td>
+        <td>{{ transaction.name }}</td>
+        <td>{{ transaction.quantity }}</td>
+        <td>{{ transaction.price }}</td>
+        <td>{{ transaction.amount }}</td>
+      </tr>
+      {% endfor %}
       <tr>
         <td>CASH</td>
         <td></td>
         <td></td>
         <td></td>
-        <td>$10,000.00</td>
+        <td>{{ cash }}</td>
       </tr>
+      <tr>
         <td colspan="4"></td>
-        <th>$10,000.00</th>
+        <th>{{ grand_total }}</th>
       </tr>
     </tbody>
   </table>

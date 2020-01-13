@@ -65,7 +65,33 @@ def index():
     """Show portfolio of stocks"""
     print("INDEX")
 
-    return render_template("index.html")
+    # get current user's balance
+    user = User.query.get(session["user_id"])
+
+    # get all the stocks currently available
+    transactions_db = db.session.query(Stock.stock, Stock.name, db.func.sum(Transaction.quantity).label("quantity"),Transaction.price, db.func.sum(Transaction.amount).label("amount")) \
+        .filter(Transaction.stock_id == Stock.id, Transaction.user_id == session["user_id"]) \
+        .group_by("stock_id").all()
+
+    # lookup for current price/format the amount/calculate the grand total
+    grand_total = user.cash
+    transaction = {}
+    transactions = []
+
+    for transaction_db in transactions_db:
+        transaction["stock"] = transaction_db.stock
+        transaction["name"] = transaction_db.name
+        transaction["quantity"] = transaction_db.quantity
+        # transaction["price"] = transaction_db.price
+        transaction["amount"] = usd(transaction_db.amount)
+        # lookup for current price
+        data = lookup(transaction_db.stock)
+        transaction["price"] = usd(data["price"])
+        transactions.append(transaction)
+
+        grand_total += transaction_db.amount
+
+    return render_template("index.html", transactions=transactions, cash=usd(user.cash), grand_total=usd(grand_total))
 
 @app.route("/quote", methods=["GET", "POST"])
 @login_required
@@ -112,8 +138,7 @@ def buy():
             amount = int(request.form.get("quantity")) * float(data["price"])
             # query the DB to get the current balance of the user
             balance = db.session.query(db.func.sum(Transaction.amount)).filter(Transaction.user_id == session["user_id"]).first()
-            # balance = Transaction.query(func.sum(amount)).filter_by(user_id=session["user_id"])
-            if balance is not None:
+            if balance[0] is not None:
                 if float(balance[0]) < amount:
                     return apology("balance too low", 403)
 
@@ -133,6 +158,9 @@ def buy():
                 quantity=int(request.form.get("quantity")), price=float(data["price"]), amount=amount)
             # add the transaction to the transaction data
             db.session.add(transaction)
+            # subtract the amount of the transaction to the user's cash
+            user = User.query.get(session["user_id"])
+            user.cash -= amount
             # commit changes to validate the transaction
             db.session.commit()
 

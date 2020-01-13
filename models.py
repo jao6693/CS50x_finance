@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import relationship
 
 db = SQLAlchemy()
 
@@ -31,3 +32,4 @@ class Transaction(db.Model):
     price = db.Column(db.Float, nullable=False)
     amount = db.Column(db.Float, nullable=False)
     currency = db.Column(db.Text, nullable=False, default="USD")
+    stock = relationship(Stock)
