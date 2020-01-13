@@ -43,7 +43,7 @@ Session(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///finance.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # initialize app
-print("INITIALIZE")
+print("Initializing the Flask application...")
 # https://stackoverflow.com/questions/9692962/flask-sqlalchemy-import-context-issue/9695045#9695045
 db.init_app(app)
 # push the context so that DB operations are performed inside an application context
@@ -63,13 +63,13 @@ else:
 @login_required
 def index():
     """Show portfolio of stocks"""
-    print("Rendering Portfolio")
+    print("Rendering Portfolio View")
 
     # get current user's balance
     user_db = User.query.get(session["user_id"])
 
     # get all the stocks currently available
-    transactions_db = db.session.query(Stock.stock, Stock.name, db.func.sum(Transaction.quantity).label("quantity"), Transaction.price) \
+    transactions_db = db.session.query(Stock.stock, Stock.name, db.func.sum(Transaction.quantity).label("quantity"), db.func.sum(Transaction.amount).label("amount")) \
         .filter(Transaction.stock_id == Stock.id, Transaction.user_id == session["user_id"]) \
         .group_by("stock_id").all()
 
@@ -78,21 +78,31 @@ def index():
     transaction = {}
     transactions = []
 
-    for transaction_db in transactions_db:
+    # for transaction_db in transactions_db:
+    valid_transactions_db = (transaction_db for transaction_db in transactions_db if transaction_db.quantity > 0)
+    for transaction_db in valid_transactions_db:
         transaction["stock"] = transaction_db.stock
         transaction["name"] = transaction_db.name
         transaction["quantity"] = transaction_db.quantity
         # lookup for current price
         api_response = lookup(transaction_db.stock)
-        transaction["price"] = usd(float(api_response["price"]))
+        price = float(api_response["price"])
+        transaction["price"] = usd(price)
+        # define a comparison indicator on the price (latest) vs average price (DB)
+        avg_price = float(transaction_db.amount / transaction_db.quantity)
+        if price > avg_price:
+            transaction["price_indicator"] = "table-success"
+        elif price == avg_price:
+            transaction["price_indicator"] = "table-secondary"
+        else:
+            transaction["price_indicator"] = "table-danger"
         # the amount is valuated based on the latest price
-        amount = float(transaction_db.quantity * float(api_response["price"]))
+        amount = float(transaction_db.quantity * price)
         transaction["amount"] = usd(amount)
         transactions.append(transaction.copy())
 
         grand_total += amount
 
-    print(transactions)
     return render_template("index.html", transactions=transactions, cash=usd(user_db.cash), grand_total=usd(grand_total))
 
 @app.route("/quote", methods=["GET", "POST"])
@@ -104,7 +114,7 @@ def quote():
     example of API call:
     https://cloud.iexapis.com/stable/stock/aapl/quote?token=API_TOKEN
     """
-    print("Rendering Quote")
+    print("Rendering Quote View")
 
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
@@ -126,7 +136,7 @@ def quote():
 @login_required
 def buy():
     """Buy shares of stock"""
-    print("BUY")
+    print("Rendering Buy View")
 
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
@@ -177,7 +187,7 @@ def buy():
 @login_required
 def sell():
     """Sell shares of stock"""
-    print("Rendering Sell")
+    print("Rendering Sell View")
 
     # get all the stocks currently available
     stocks_db = db.session.query(Stock.id, Stock.stock, db.func.sum(Transaction.quantity).label("quantity")) \
@@ -230,7 +240,7 @@ def sell():
 @login_required
 def history():
     """Show history of transactions"""
-    print("Rendering History")
+    print("Rendering History View")
 
     # get all the transactions for the user
     transactions_db = db.session.query(Stock.stock, Stock.name, Transaction.quantity, Transaction.price, Transaction.created_on) \
@@ -254,7 +264,7 @@ def history():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
-    print("Rendering Login")
+    print("Rendering Login View")
 
     # forget any user_id
     session.clear()
@@ -290,7 +300,7 @@ def login():
 @app.route("/logout")
 def logout():
     """Log user out"""
-    print("Rendering Logout")
+    print("Rendering Logout View")
 
     # forget any user_id
     session.clear()
@@ -301,7 +311,7 @@ def logout():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
-    print("Rendering Register")
+    print("Rendering Register View")
 
     # forget any user_id
     session.clear()
