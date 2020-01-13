@@ -63,18 +63,18 @@ else:
 @login_required
 def index():
     """Show portfolio of stocks"""
-    print("INDEX")
+    print("Rendering Portfolio")
 
     # get current user's balance
-    user = User.query.get(session["user_id"])
+    user_db = User.query.get(session["user_id"])
 
     # get all the stocks currently available
-    transactions_db = db.session.query(Stock.stock, Stock.name, db.func.sum(Transaction.quantity).label("quantity"),Transaction.price, db.func.sum(Transaction.amount).label("amount")) \
+    transactions_db = db.session.query(Stock.stock, Stock.name, db.func.sum(Transaction.quantity).label("quantity"), Transaction.price) \
         .filter(Transaction.stock_id == Stock.id, Transaction.user_id == session["user_id"]) \
         .group_by("stock_id").all()
 
     # lookup for current price/format the amount/calculate the grand total
-    grand_total = user.cash
+    grand_total = user_db.cash
     transaction = {}
     transactions = []
 
@@ -82,16 +82,18 @@ def index():
         transaction["stock"] = transaction_db.stock
         transaction["name"] = transaction_db.name
         transaction["quantity"] = transaction_db.quantity
-        # transaction["price"] = transaction_db.price
-        transaction["amount"] = usd(transaction_db.amount)
         # lookup for current price
-        data = lookup(transaction_db.stock)
-        transaction["price"] = usd(data["price"])
-        transactions.append(transaction)
+        api_response = lookup(transaction_db.stock)
+        transaction["price"] = usd(float(api_response["price"]))
+        # the amount is valuated based on the latest price
+        amount = float(transaction_db.quantity * float(api_response["price"]))
+        transaction["amount"] = usd(amount)
+        transactions.append(transaction.copy())
 
-        grand_total += transaction_db.amount
+        grand_total += amount
 
-    return render_template("index.html", transactions=transactions, cash=usd(user.cash), grand_total=usd(grand_total))
+    print(transactions)
+    return render_template("index.html", transactions=transactions, cash=usd(user_db.cash), grand_total=usd(grand_total))
 
 @app.route("/quote", methods=["GET", "POST"])
 @login_required
@@ -102,20 +104,20 @@ def quote():
     example of API call:
     https://cloud.iexapis.com/stable/stock/aapl/quote?token=API_TOKEN
     """
-    print("QUOTE")
+    print("Rendering Quote")
 
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
         # consume the API to get the latest price
-        data = lookup(request.form.get("stock"))
+        api_response = lookup(request.form.get("stock"))
         # check for potential errors
-        if data is None:
+        if api_response is None:
             return apology("stock does not exist", 404)
         else:
             # format the amount in USD
-            amount = usd(data["price"])
+            amount = usd(api_response["price"])
 
-            return render_template("quote_response.html", stock=data["symbol"], name=data["name"], amount=amount)
+            return render_template("quote_response.html", stock=api_response["symbol"], name=api_response["name"], amount=amount)
     # user reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("quote_request.html")
@@ -129,38 +131,38 @@ def buy():
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
         # consume the API to get the latest price
-        data = lookup(request.form.get("stock"))
+        api_response = lookup(request.form.get("stock"))
         # check for potential errors
-        if data is None:
+        if api_response is None:
             return apology("stock does not exist", 404)
         else:
             # calculate the transaction amount to check whether the user can afford to purchase these stocks
-            amount = int(request.form.get("quantity")) * float(data["price"])
+            amount = int(request.form.get("quantity")) * float(api_response["price"])
             # query the DB to get the current balance of the user
-            balance = db.session.query(db.func.sum(Transaction.amount)).filter(Transaction.user_id == session["user_id"]).first()
-            if balance[0] is not None:
-                if float(balance[0]) < amount:
+            balance_db = db.session.query(db.func.sum(Transaction.amount)).filter(Transaction.user_id == session["user_id"]).first()
+            if balance_db[0] is not None:
+                if float(balance_db[0]) < amount:
                     return apology("balance too low", 403)
 
             # update the transaction & the stock tables
-            stock_exists = Stock.query.filter_by(name=data["name"]).count()
+            stock_db_exists = Stock.query.filter_by(name=api_response["name"]).count()
 
-            if stock_exists == 0:
-                stock = Stock(stock=data["symbol"], name=data["name"])
+            if stock_db_exists == 0:
+                stock_db = Stock(stock=api_response["symbol"], name=api_response["name"])
                 # add the stock to the master data
-                db.session.add(stock)
+                db.session.add(stock_db)
                 # commit changes to get an Id for the stock
                 db.session.commit()
 
-            stock = Stock.query.filter_by(name=data["name"]).first()
+            stock_db = Stock.query.filter_by(name=api_response["name"]).first()
             # add the transaction to the transaction data
-            transaction = Transaction(stock_id=stock.id, user_id=session["user_id"], \
-                quantity=int(request.form.get("quantity")), price=float(data["price"]), amount=amount)
-            # add the transaction to the transaction data
-            db.session.add(transaction)
+            transaction_db = Transaction(stock_id=stock_db.id, user_id=session["user_id"], \
+                quantity=int(request.form.get("quantity")), price=float(api_response["price"]), amount=amount)
+            # post the transaction data
+            db.session.add(transaction_db)
             # subtract the amount of the transaction to the user's cash
-            user = User.query.get(session["user_id"])
-            user.cash -= amount
+            user_db = User.query.get(session["user_id"])
+            user_db.cash -= amount
             # commit changes to validate the transaction
             db.session.commit()
 
@@ -175,22 +177,67 @@ def buy():
 @login_required
 def sell():
     """Sell shares of stock"""
-    print("SELL")
+    print("Rendering Sell")
 
-    return apology("TODO")
+    # get all the stocks currently available
+    stocks_db = db.session.query(Stock.id, Stock.stock, db.func.sum(Transaction.quantity).label("quantity")) \
+        .filter(Transaction.stock_id == Stock.id, Transaction.user_id == session["user_id"]) \
+        .group_by("stock_id").all()
+
+    # user reached route via POST (as by submitting a form via POST)
+    if request.method == "POST":
+        # get the values entered by the user
+        stock = request.form.get("symbol")
+        quantity = int(request.form.get("quantity"))
+
+        # return the DB row for the selected stock
+        stock_db = next((stock_db for stock_db in stocks_db if stock_db.stock == stock), None)
+        if stock_db is None:
+            return apology("must provide a valid stock", 403)
+        else:
+            if stock_db.quantity < quantity:
+                return apology("quantity is too high", 403)
+
+        # consume the API to get the latest price
+        api_response = lookup(stock)
+        price = float(api_response["price"])
+        # calculate the corresponding amount
+        amount = quantity * price
+        # proceed with the transaction
+        transaction_db = Transaction(stock_id=stock_db.id, user_id=session["user_id"], \
+            quantity=-1*quantity, price=price, amount=-1*amount)
+        # post the transaction data
+        db.session.add(transaction_db)
+        # add the amount of the transaction to the user's cash
+        user_db = User.query.get(session["user_id"])
+        user_db.cash += amount
+        # commit changes to validate the transaction
+        db.session.commit()
+
+        # redirect user to home page
+        return redirect("/")
+
+    # user reached route via GET (as by clicking a link or via redirect)
+    else:
+        # get all the stocks currently available
+        stocks_db = db.session.query(Stock.stock, db.func.sum(Transaction.quantity).label("quantity")) \
+            .filter(Transaction.stock_id == Stock.id, Transaction.user_id == session["user_id"]) \
+            .group_by("stock_id").all()
+
+        return render_template("sell.html", stocks=stocks_db)
 
 @app.route("/history")
 @login_required
 def history():
     """Show history of transactions"""
-    print("HISTORY")
+    print("Rendering History")
 
     return apology("TODO")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
-    print("LOGIN")
+    print("Rendering Login")
 
     # forget any user_id
     session.clear()
@@ -207,14 +254,14 @@ def login():
             return apology("must provide password", 403)
 
         # query database for username using SQLAlchemy
-        user = User.query.filter_by(username=request.form.get("username")).first()
+        user_db = User.query.filter_by(username=request.form.get("username")).first()
 
         # ensure username exists and password is correct
-        if user is None or not check_password_hash(user.hash, request.form.get("password")):
+        if user_db is None or not check_password_hash(user_db.hash, request.form.get("password")):
             return apology("invalid username and/or password", 403)
 
         # remember which user has logged in
-        session["user_id"] = user.id
+        session["user_id"] = user_db.id
 
         # redirect user to home page
         return redirect("/")
@@ -226,7 +273,7 @@ def login():
 @app.route("/logout")
 def logout():
     """Log user out"""
-    print("LOGOUT")
+    print("Rendering Logout")
 
     # forget any user_id
     session.clear()
@@ -237,7 +284,7 @@ def logout():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
-    print("REGISTER")
+    print("Rendering Register")
 
     # forget any user_id
     session.clear()
@@ -254,10 +301,10 @@ def register():
             return apology("must provide password", 403)
 
         # query database for username using SQLAlchemy
-        user_exists = User.query.filter_by(username=request.form.get("username")).count()
+        user_db_exists = User.query.filter_by(username=request.form.get("username")).count()
 
         # ensure username does not exist
-        if user_exists == 1:
+        if user_db_exists == 1:
             return apology("username already exists", 403)
 
         # ensure username is at least 3 characters long
@@ -269,17 +316,17 @@ def register():
             return apology("passwords must be identical", 403)
 
         # create the user based on the model provided
-        user = User(username=request.form.get("username"),hash=generate_password_hash(request.form.get("password")))
+        user_db = User(username=request.form.get("username"),hash=generate_password_hash(request.form.get("password")))
         # add the user to generate an Id
-        db.session.add(user)
+        db.session.add(user_db)
         # commit changes
         db.session.commit()
         # retrieve the Id by querying the DB once again
-        user = User.query.filter_by(username=request.form.get("username")).first()
+        user_db = User.query.filter_by(username=request.form.get("username")).first()
 
         # remember which user has logged in
-        if user is not None:
-            session["user_id"] = user.id
+        if user_db is not None:
+            session["user_id"] = user_db.id
             # redirect user to home page
             return redirect("/")
 
