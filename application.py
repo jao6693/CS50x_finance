@@ -232,7 +232,24 @@ def history():
     """Show history of transactions"""
     print("Rendering History")
 
-    return apology("TODO")
+    # get all the transactions for the user
+    transactions_db = db.session.query(Stock.stock, Stock.name, Transaction.quantity, Transaction.price, Transaction.created_on) \
+        .filter(Transaction.stock_id == Stock.id, Transaction.user_id == session["user_id"]) \
+        .order_by("created_on").all()
+
+    # format the price
+    transaction = {}
+    transactions = []
+
+    for transaction_db in transactions_db:
+        transaction["stock"] = transaction_db.stock
+        transaction["name"] = transaction_db.name
+        transaction["quantity"] = transaction_db.quantity
+        transaction["price"] = usd(transaction_db.price)
+        transaction["transacted"] = transaction_db.created_on
+        transactions.append(transaction.copy())
+
+    return render_template("history.html", transactions=transactions)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
