@@ -272,13 +272,14 @@ def login():
     # forget any user_id
     session.clear()
     # set a form validation indicator
-    validated = False
+    validated = True
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
         # query database for username using SQLAlchemy
         user_db = User.query.filter_by(username=request.form.get("username")).first()
         # ensure username exists and password is correct
         if user_db is None or not check_password_hash(user_db.hash, request.form.get("password")):
+            validated = False
             # add an explicit message to the page
             flash("invalid username or password")
             # go back to login page
@@ -316,24 +317,24 @@ def register():
 
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
-
-        # ensure username was submitted
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
-        # ensure password was submitted
-        elif not request.form.get("password"):
-            return apology("must provide password", 403)
+        # set a form validation indicator
+        validated = True
         # query database for username using SQLAlchemy
         user_db_exists = User.query.filter_by(username=request.form.get("username")).count()
         # ensure username does not exist
         if user_db_exists == 1:
-            return apology("username already exists", 403)
-        # ensure username is at least 3 characters long
-        if len(request.form.get("username")) < 3:
-            return apology("username must be at least 3 characters long", 403)
+            validated = False
+            # add an explicit message to the page
+            flash("username already exists")
         # ensure password is correct
         if request.form.get("password") != request.form.get("password-confirm") :
-            return apology("passwords must be identical", 403)
+            validated = False
+            # add an explicit message to the page
+            flash("passwords must be identical")
+
+        if validated == False:
+            # go back to register page
+            return render_template("register.html")
 
         # create the user based on the model provided
         user_db = User(username=request.form.get("username"),hash=generate_password_hash(request.form.get("password")))

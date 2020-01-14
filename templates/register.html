@@ -1,19 +1,27 @@
 {% extends "layout.html" %}
 
+{% block script %}
+  <script src="{{url_for("static", filename="alert-remove.js")}}"></script>
+  <script src="{{url_for("static", filename="form-validate.js")}}"></script>
+{% endblock %}
+
 {% block title %}
   Register
 {% endblock %}
 
 {% block main %}
-  <form action="/register" method="post">
+  <form class="validation-required" novalidate action="/register" method="post">
     <div class="form-group">
-      <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text">
+      <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text" minlength="3" required>
+      <div class="invalid-feedback">Provide a valid username of at least 3 characters</div>
     </div>
     <div class="form-group">
-      <input class="form-control" name="password" placeholder="Password" type="password">
+      <input class="form-control" name="password" placeholder="Password" type="password" pattern="[0-9a-zA-Z]{6,8}" minlength="6" maxlength="8" required>
+      <div class="invalid-feedback">Provide a valid password of at least 6 alphanumeric characters</div>
     </div>
     <div class="form-group">
-      <input class="form-control" name="password-confirm" placeholder="Confirm Password" type="password">
+      <input class="form-control" name="password-confirm" placeholder="Confirm Password" type="password" pattern="[0-9a-zA-Z]{6,8}" minlength="6" maxlength="8" required>
+      <div class="invalid-feedback">Provide a valid password of at least 6 alphanumeric characters</div>
     </div>
     <button class="btn btn-primary" type="submit">Register</button>
   </form>
