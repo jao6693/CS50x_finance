@@ -149,11 +149,10 @@ def buy():
         else:
             # calculate the transaction amount to check whether the user can afford to purchase these stocks
             amount = int(request.form.get("quantity")) * float(api_response["price"])
-            # query the DB to get the current balance of the user
-            balance_db = db.session.query(db.func.sum(Transaction.amount)).filter(Transaction.user_id == session["user_id"]).first()
-            if balance_db[0] is not None:
-                if float(balance_db[0]) < amount:
-                    return apology("balance too low", 403)
+            # query the DB to get the cash available for the user
+            user_db = User.query.get(session["user_id"])
+            if user_db.cash < amount:
+                return apology("balance too low", 403)
 
             # update the transaction & the stock tables
             stock_db_exists = Stock.query.filter_by(name=api_response["name"]).count()
@@ -172,7 +171,6 @@ def buy():
             # post the transaction data
             db.session.add(transaction_db)
             # subtract the amount of the transaction to the user's cash
-            user_db = User.query.get(session["user_id"])
             user_db.cash -= amount
             # commit changes to validate the transaction
             db.session.commit()
