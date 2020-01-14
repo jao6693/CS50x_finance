@@ -271,24 +271,21 @@ def login():
 
     # forget any user_id
     session.clear()
-
+    # set a form validation indicator
+    validated = False
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
-
-        # ensure username was submitted
-        if not request.form.get("username"):
-            return apology("must provide username", 403)
-        # ensure password was submitted
-        elif not request.form.get("password"):
-            return apology("must provide password", 403)
         # query database for username using SQLAlchemy
         user_db = User.query.filter_by(username=request.form.get("username")).first()
         # ensure username exists and password is correct
         if user_db is None or not check_password_hash(user_db.hash, request.form.get("password")):
-            return apology("invalid username and/or password", 403)
+            # add an explicit message to the page
+            flash("invalid username or password")
+            # go back to login page
+            return render_template("login.html")
+
         # remember which user has logged in
         session["user_id"] = user_db.id
-
         # add an explicit message to the page
         flash("Logged in!")
         # redirect user to home page
