@@ -8,33 +8,33 @@
   <table class="table table-striped">
     <thead>
       <tr>
-        <th scope="col">Symbol</th>
-        <th scope="col">Name</th>
-        <th scope="col">Shares</th>
-        <th scope="col">Price</th>
-        <th scope="col">TOTALS</th>
+        <th scope="col" class="text-left">Symbol</th>
+        <th scope="col" class="text-left">Name</th>
+        <th scope="col" class="text-left">Shares</th>
+        <th scope="col" class="text-left">Price</th>
+        <th scope="col" class="text-left">TOTALS</th>
       </tr>
     </thead>
     <tbody>
       {% for transaction in transactions %}
       <tr>
-        <td>{{ transaction.stock }}</td>
-        <td>{{ transaction.name }}</td>
-        <td>{{ transaction.quantity }}</td>
-        <td class="{{ transaction.price_indicator }}">{{ transaction.price }}</td>
-        <td>{{ transaction.amount }}</td>
+        <td class="text-left">{{ transaction.stock }}</td>
+        <td class="text-left">{{ transaction.name }}</td>
+        <td class="text-left">{{ transaction.quantity }}</td>
+        <td class="text-left {{ transaction.price_indicator }}">{{ transaction.price }}</td>
+        <td class="text-left">{{ transaction.amount }}</td>
       </tr>
       {% endfor %}
       <tr>
-        <td>CASH</td>
+        <td class="text-left">CASH</td>
         <td></td>
         <td></td>
         <td></td>
-        <td>{{ cash }}</td>
+        <td class="text-left">{{ cash }}</td>
       </tr>
       <tr>
         <td colspan="4"></td>
-        <th>{{ grand_total }}</th>
+        <th class="text-left">{{ grand_total }}</th>
       </tr>
     </tbody>
   </table>

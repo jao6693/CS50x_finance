@@ -8,21 +8,21 @@
   <table class="table table-striped">
     <thead>
       <tr>
-        <th scope="col">Symbol</th>
-        <th scope="col">Name</th>
-        <th scope="col">Shares</th>
-        <th scope="col">Price</th>
-        <th scope="col">Transacted</th>
+        <th scope="col" class="text-left">Symbol</th>
+        <th scope="col" class="text-left">Name</th>
+        <th scope="col" class="text-left">Shares</th>
+        <th scope="col" class="text-left">Price</th>
+        <th scope="col" class="text-left">Transacted</th>
       </tr>
     </thead>
     <tbody>
       {% for transaction in transactions %}
       <tr>
-        <td>{{ transaction.stock }}</td>
-        <td>{{ transaction.name }}</td>
-        <td>{{ transaction.quantity }}</td>
-        <td>{{ transaction.price }}</td>
-        <td>{{ transaction.transacted }}</td>
+        <td class="text-left">{{ transaction.stock }}</td>
+        <td class="text-left">{{ transaction.name }}</td>
+        <td class="text-left">{{ transaction.quantity }}</td>
+        <td class="text-left">{{ transaction.price }}</td>
+        <td class="text-left">{{ transaction.transacted }}</td>
       </tr>
       {% endfor %}
     </tbody>
