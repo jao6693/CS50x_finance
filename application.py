@@ -176,6 +176,8 @@ def buy():
             # commit changes to validate the transaction
             db.session.commit()
 
+            # add an explicit message to the page
+            flash("Bought!")
             # redirect user to home page
             return redirect("/")
 
@@ -224,6 +226,8 @@ def sell():
         # commit changes to validate the transaction
         db.session.commit()
 
+        # add an explicit message to the page
+        flash("Sold!")
         # redirect user to home page
         return redirect("/")
 
@@ -275,21 +279,19 @@ def login():
         # ensure username was submitted
         if not request.form.get("username"):
             return apology("must provide username", 403)
-
         # ensure password was submitted
         elif not request.form.get("password"):
             return apology("must provide password", 403)
-
         # query database for username using SQLAlchemy
         user_db = User.query.filter_by(username=request.form.get("username")).first()
-
         # ensure username exists and password is correct
         if user_db is None or not check_password_hash(user_db.hash, request.form.get("password")):
             return apology("invalid username and/or password", 403)
-
         # remember which user has logged in
         session["user_id"] = user_db.id
 
+        # add an explicit message to the page
+        flash("Logged in!")
         # redirect user to home page
         return redirect("/")
 
@@ -322,22 +324,17 @@ def register():
         # ensure username was submitted
         if not request.form.get("username"):
             return apology("must provide username", 403)
-
         # ensure password was submitted
         elif not request.form.get("password"):
             return apology("must provide password", 403)
-
         # query database for username using SQLAlchemy
         user_db_exists = User.query.filter_by(username=request.form.get("username")).count()
-
         # ensure username does not exist
         if user_db_exists == 1:
             return apology("username already exists", 403)
-
         # ensure username is at least 3 characters long
         if len(request.form.get("username")) < 3:
             return apology("username must be at least 3 characters long", 403)
-
         # ensure password is correct
         if request.form.get("password") != request.form.get("password-confirm") :
             return apology("passwords must be identical", 403)
@@ -354,6 +351,8 @@ def register():
         # remember which user has logged in
         if user_db is not None:
             session["user_id"] = user_db.id
+            # add an explicit message to the page
+            flash("Registered!")
             # redirect user to home page
             return redirect("/")
 
