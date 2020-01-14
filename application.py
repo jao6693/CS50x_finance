@@ -123,7 +123,10 @@ def quote():
         api_response = lookup(request.form.get("stock"))
         # check for potential errors
         if api_response is None:
-            return apology("stock does not exist", 404)
+            # add an explicit message to the page
+            flash("Stock does not exist")
+            # go back to quote page
+            return render_template("quote_request.html")
         else:
             # format the amount in USD
             amount = usd(api_response["price"])
@@ -141,44 +144,54 @@ def buy():
 
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
+        # use a validation indicator
+        validated = True
         # consume the API to get the latest price
         api_response = lookup(request.form.get("stock"))
         # check for potential errors
         if api_response is None:
-            return apology("stock does not exist", 404)
+            validated = False
+            # add an explicit message to the page
+            flash("stock does not exist")
         else:
             # calculate the transaction amount to check whether the user can afford to purchase these stocks
             amount = int(request.form.get("quantity")) * float(api_response["price"])
             # query the DB to get the cash available for the user
             user_db = User.query.get(session["user_id"])
             if user_db.cash < amount:
-                return apology("balance too low", 403)
+                validated = False
+                # add an explicit message to the page
+                flash("balance too low")
+            else:
+                # update the transaction & the stock tables
+                stock_db_exists = Stock.query.filter_by(name=api_response["name"]).count()
 
-            # update the transaction & the stock tables
-            stock_db_exists = Stock.query.filter_by(name=api_response["name"]).count()
+                if stock_db_exists == 0:
+                    stock_db = Stock(stock=api_response["symbol"], name=api_response["name"])
+                    # add the stock to the master data
+                    db.session.add(stock_db)
+                    # commit changes to get an Id for the stock
+                    db.session.commit()
 
-            if stock_db_exists == 0:
-                stock_db = Stock(stock=api_response["symbol"], name=api_response["name"])
-                # add the stock to the master data
-                db.session.add(stock_db)
-                # commit changes to get an Id for the stock
+                stock_db = Stock.query.filter_by(name=api_response["name"]).first()
+                # add the transaction to the transaction data
+                transaction_db = Transaction(stock_id=stock_db.id, user_id=session["user_id"], \
+                    quantity=int(request.form.get("quantity")), price=float(api_response["price"]), amount=amount)
+                # post the transaction data
+                db.session.add(transaction_db)
+                # subtract the amount of the transaction to the user's cash
+                user_db.cash -= amount
+                # commit changes to validate the transaction
                 db.session.commit()
 
-            stock_db = Stock.query.filter_by(name=api_response["name"]).first()
-            # add the transaction to the transaction data
-            transaction_db = Transaction(stock_id=stock_db.id, user_id=session["user_id"], \
-                quantity=int(request.form.get("quantity")), price=float(api_response["price"]), amount=amount)
-            # post the transaction data
-            db.session.add(transaction_db)
-            # subtract the amount of the transaction to the user's cash
-            user_db.cash -= amount
-            # commit changes to validate the transaction
-            db.session.commit()
+                # add an explicit message to the page
+                flash("Bought!")
+                # redirect user to home page
+                return redirect("/")
 
-            # add an explicit message to the page
-            flash("Bought!")
-            # redirect user to home page
-            return redirect("/")
+        if validated == False:
+            # go back to buy page
+            return render_template("buy.html")
 
     # user reached route via GET (as by clicking a link or via redirect)
     else:
@@ -197,6 +210,8 @@ def sell():
 
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
+        # use a validation indicator
+        validated = True
         # get the values entered by the user
         stock = request.form.get("symbol")
         quantity = int(request.form.get("quantity"))
@@ -204,31 +219,38 @@ def sell():
         # return the DB row for the selected stock
         stock_db = next((stock_db for stock_db in stocks_db if stock_db.stock == stock), None)
         if stock_db is None:
-            return apology("must provide a valid stock", 403)
+            validated = False
+            # add an explicit message to the page
+            flash("stock does not exist")
         else:
             if stock_db.quantity < quantity:
-                return apology("quantity is too high", 403)
+                validated = False
+                # add an explicit message to the page
+                flash("quantity is too high")
 
-        # consume the API to get the latest price
-        api_response = lookup(stock)
-        price = float(api_response["price"])
-        # calculate the corresponding amount
-        amount = quantity * price
-        # proceed with the transaction
-        transaction_db = Transaction(stock_id=stock_db.id, user_id=session["user_id"], \
-            quantity=-1*quantity, price=price, amount=-1*amount)
-        # post the transaction data
-        db.session.add(transaction_db)
-        # add the amount of the transaction to the user's cash
-        user_db = User.query.get(session["user_id"])
-        user_db.cash += amount
-        # commit changes to validate the transaction
-        db.session.commit()
+        if validated == True:
+            # consume the API to get the latest price
+            api_response = lookup(stock)
+            price = float(api_response["price"])
+            # calculate the corresponding amount
+            amount = quantity * price
+            # proceed with the transaction
+            transaction_db = Transaction(stock_id=stock_db.id, user_id=session["user_id"], \
+                quantity=-1*quantity, price=price, amount=-1*amount)
+            # post the transaction data
+            db.session.add(transaction_db)
+            # add the amount of the transaction to the user's cash
+            user_db = User.query.get(session["user_id"])
+            user_db.cash += amount
+            # commit changes to validate the transaction
+            db.session.commit()
 
-        # add an explicit message to the page
-        flash("Sold!")
-        # redirect user to home page
-        return redirect("/")
+            # add an explicit message to the page
+            flash("Sold!")
+            # redirect user to home page
+            return redirect("/")
+        else:
+            return render_template("sell.html")
 
     # user reached route via GET (as by clicking a link or via redirect)
     else:
