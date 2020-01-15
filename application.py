@@ -11,7 +11,7 @@ from models import *
 from sqlalchemy import select
 from sqlalchemy.sql import func
 
-from helpers import apology, login_required, lookup, usd
+from helpers import apology, login_required, lookup, usd, percentage
 
 # configure application
 app = Flask(__name__)
@@ -30,6 +30,7 @@ def after_request(response):
 # custom filter
 # https://cs50.stackexchange.com/questions/34720/pset8-2019-jinja-env-filters-error
 app.jinja_env.filters["usd"] = usd
+app.jinja_env.filters["percentage"] = percentage
 
 # configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_FILE_DIR"] = mkdtemp()
@@ -87,19 +88,18 @@ def index():
         transaction["quantity"] = transaction_db.quantity
         # lookup for current price
         api_response = lookup(transaction_db.stock)
-        price = round(float(api_response["price"]), 2)
+        price = float(api_response["price"])
         transaction["price"] = price
         # define a comparison indicator on the price (latest) vs average price (DB)
-        avg_price = round(float(transaction_db.amount / transaction_db.quantity), 2)
-        print("stock: ", transaction_db.stock)
-        print("avg price: ", avg_price)
-        print("price: ", price)
-        if price > avg_price:
+        avg_price = float(transaction_db.amount / transaction_db.quantity)
+        if round(price, 2) > round(avg_price, 2):
             transaction["price_indicator"] = "table-success"
-        elif price == avg_price:
+        elif round(price, 2) == round(avg_price, 2):
             transaction["price_indicator"] = "table-secondary"
         else:
             transaction["price_indicator"] = "table-danger"
+        # the price variation is calculated based on historical average + latest price
+        transaction["variation"] = ((price - avg_price) / avg_price)
         # the amount is valuated based on the latest price
         amount = float(transaction_db.quantity * price)
         transaction["amount"] = amount

@@ -16,6 +16,7 @@
         <th scope="col" class="text-left">Name</th>
         <th scope="col" class="text-left">Shares</th>
         <th scope="col" class="text-left">Price</th>
+        <th scope="col" class="text-left">Variation</th>
         <th scope="col" class="text-left">TOTALS</th>
       </tr>
     </thead>
@@ -26,6 +27,7 @@
         <td class="text-left">{{ transaction.name }}</td>
         <td class="text-left">{{ transaction.quantity }}</td>
         <td class="text-left {{ transaction.price_indicator }}">{{ transaction.price|usd }}</td>
+        <td class="text-left {{ transaction.price_indicator }}">{{ transaction.variation|percentage }}</td>
         <td class="text-left">{{ transaction.amount|usd }}</td>
       </tr>
       {% endfor %}
@@ -34,10 +36,11 @@
         <td></td>
         <td></td>
         <td></td>
+        <td></td>
         <td class="text-left">{{ cash|usd }}</td>
       </tr>
       <tr>
-        <td colspan="4"></td>
+        <td colspan="5"></td>
         <th class="text-left">{{ grand_total|usd }}</th>
       </tr>
     </tbody>
