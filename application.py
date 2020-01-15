@@ -87,10 +87,13 @@ def index():
         transaction["quantity"] = transaction_db.quantity
         # lookup for current price
         api_response = lookup(transaction_db.stock)
-        price = float(api_response["price"])
-        transaction["price"] = usd(price)
+        price = round(float(api_response["price"]), 2)
+        transaction["price"] = price
         # define a comparison indicator on the price (latest) vs average price (DB)
-        avg_price = float(transaction_db.amount / transaction_db.quantity)
+        avg_price = round(float(transaction_db.amount / transaction_db.quantity), 2)
+        print("stock: ", transaction_db.stock)
+        print("avg price: ", avg_price)
+        print("price: ", price)
         if price > avg_price:
             transaction["price_indicator"] = "table-success"
         elif price == avg_price:
@@ -99,12 +102,12 @@ def index():
             transaction["price_indicator"] = "table-danger"
         # the amount is valuated based on the latest price
         amount = float(transaction_db.quantity * price)
-        transaction["amount"] = usd(amount)
+        transaction["amount"] = amount
         transactions.append(transaction.copy())
 
         grand_total += amount
 
-    return render_template("index.html", transactions=transactions, cash=usd(user_db.cash), grand_total=usd(grand_total))
+    return render_template("index.html", transactions=transactions, cash=user_db.cash, grand_total=grand_total)
 
 @app.route("/quote", methods=["GET", "POST"])
 @login_required
@@ -129,7 +132,7 @@ def quote():
             return render_template("quote_request.html")
         else:
             # format the amount in USD
-            amount = usd(api_response["price"])
+            amount = api_response["price"]
 
             return render_template("quote_response.html", stock=api_response["symbol"], name=api_response["name"], amount=amount)
     # user reached route via GET (as by clicking a link or via redirect)
@@ -280,7 +283,7 @@ def history():
         transaction["stock"] = transaction_db.stock
         transaction["name"] = transaction_db.name
         transaction["quantity"] = transaction_db.quantity
-        transaction["price"] = usd(transaction_db.price)
+        transaction["price"] = transaction_db.price
         transaction["transacted"] = transaction_db.created_on
         transactions.append(transaction.copy())
 

@@ -21,7 +21,7 @@
         <td class="text-left">{{ transaction.stock }}</td>
         <td class="text-left">{{ transaction.name }}</td>
         <td class="text-left">{{ transaction.quantity }}</td>
-        <td class="text-left">{{ transaction.price }}</td>
+        <td class="text-left">{{ transaction.price|usd }}</td>
         <td class="text-left">{{ transaction.transacted }}</td>
       </tr>
       {% endfor %}
