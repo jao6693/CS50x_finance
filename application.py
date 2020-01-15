@@ -217,7 +217,7 @@ def sell():
         validated = True
         # get the values entered by the user
         stock = request.form.get("symbol")
-        quantity = int(request.form.get("quantity"))
+        quantity = int(request.form.get("shares"))
 
         # return the DB row for the selected stock
         stock_db = next((stock_db for stock_db in stocks_db if stock_db.stock == stock), None)
