@@ -253,15 +253,10 @@ def sell():
             # redirect user to home page
             return redirect("/")
         else:
-            return render_template("sell.html")
+            return render_template("sell.html", stocks=stocks_db)
 
     # user reached route via GET (as by clicking a link or via redirect)
     else:
-        # get all the stocks currently available
-        stocks_db = db.session.query(Stock.stock, db.func.sum(Transaction.quantity).label("quantity")) \
-            .filter(Transaction.stock_id == Stock.id, Transaction.user_id == session["user_id"]) \
-            .group_by("stock_id").all()
-
         return render_template("sell.html", stocks=stocks_db)
 
 @app.route("/history")
