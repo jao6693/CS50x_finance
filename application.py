@@ -352,7 +352,7 @@ def register():
             # add an explicit message to the page
             flash("username already exists")
         # ensure password is correct
-        if request.form.get("password") != request.form.get("password-confirm") :
+        if request.form.get("password") != request.form.get("confirmation") :
             validated = False
             # add an explicit message to the page
             flash("passwords must be identical")
