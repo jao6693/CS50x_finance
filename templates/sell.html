@@ -2,6 +2,7 @@
 
 {% block script %}
   <script src="{{url_for("static", filename="alert-remove.js")}}"></script>
+  <script src="{{url_for("static", filename="form-validate.js")}}"></script>
 {% endblock %}
 
 {% block title %}
@@ -9,19 +10,21 @@
 {% endblock %}
 
 {% block main %}
-  <form action="/sell" method="post">
+  <form class="validation-required" novalidate action="/sell" method="post">
     <div class="form-group">
       <div class="col-md-2 mx-auto">
-        <select class="custom-select" name="symbol">
+        <select class="custom-select" name="symbol" required>
           <option disabled selected>Symbol</option>
           {% for stock in stocks %}
             <option value="{{ stock.stock }}">{{ stock.stock }}</option>
           {% endfor %}
         </select>
       </div>
+      <div class="invalid-feedback">Enter a stock</div>
     </div>
     <div class="form-group">
-      <input class="form-control" name="shares" placeholder="Shares" type="number" min="1">
+      <input class="form-control" name="shares" placeholder="Shares" type="number" min="1" required>
+      <div class="invalid-feedback">Enter a quantity</div>
     </div>
     <button class="btn btn-primary" type="submit">Sell</button>
   </form>
