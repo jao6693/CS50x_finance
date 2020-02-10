@@ -2,6 +2,7 @@
 
 {% block script %}
   <script src="{{url_for("static", filename="alert-remove.js")}}"></script>
+  <script src="{{url_for("static", filename="form-validate.js")}}"></script>
 {% endblock %}
 
 {% block title %}
@@ -9,9 +10,10 @@
 {% endblock %}
 
 {% block main %}
-  <form action="/quote" method="post">
+  <form class="validation-required" novalidate action="/quote" method="post">
     <div class="form-group">
-      <input autocomplete="off" autofocus class="form-control" name="stock" placeholder="Symbol" type="text">
+      <input autocomplete="off" autofocus class="form-control" name="stock" placeholder="Symbol" type="text" required>
+      <div class="invalid-feedback">Enter a stock</div>
     </div>
     <button class="btn btn-primary" type="submit">Quote</button>
   </form>
