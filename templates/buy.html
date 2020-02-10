@@ -10,13 +10,13 @@
 {% endblock %}
 
 {% block main %}
-  <form class="validation-required" novalidat action="/buy" method="post">
+  <form class="validation-required" novalidate action="/buy" method="post">
     <div class="form-group">
       <input autocomplete="off" autofocus class="form-control" name="symbol" placeholder="Symbol" type="text" required>
       <div class="invalid-feedback">Enter a stock</div>
     </div>
     <div class="form-group">
-      <input class="form-control" name="shares" placeholder="Shares" type="number" min="0" required>
+      <input class="form-control" name="shares" placeholder="Shares" type="number" min="1" required>
       <div class="invalid-feedback">Enter a quantity</div>
     </div>
     <button class="btn btn-primary" type="submit">Buy</button>
