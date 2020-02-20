@@ -1,2 +1,5 @@
 # ignore temporary files
 .~*.py
+
+# ignore DB file
+*.db
