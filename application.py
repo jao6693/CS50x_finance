@@ -17,9 +17,6 @@ from helpers import apology, login_required, lookup, usd, percentage
 # configure application
 app = Flask(__name__)
 
-for arg in sys.argv:
-    print("Args: ", arg)
-
 # ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
