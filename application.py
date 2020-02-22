@@ -544,7 +544,9 @@ def register():
 
 def errorhandler(e):
     """Handle error"""
-    if not isinstance(e, HTTPException):
+    if isinstance(e, HTTPException):
+        app.logger.error("http exception raised: ", e)
+    else:
         e = InternalServerError()
     return apology(e.name, e.code)
 
