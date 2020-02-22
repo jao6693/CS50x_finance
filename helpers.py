@@ -42,6 +42,7 @@ def lookup(symbol, logger):
         response.raise_for_status()
         logger.warning("Successfull API call")
     except requests.RequestException:
+        logger.error("Unsuccessfull API call")
         return None
 
     # parse response
