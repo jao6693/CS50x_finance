@@ -40,9 +40,8 @@ def lookup(symbol, logger):
         api_key = os.environ.get("API_KEY")
         response = requests.get(f"https://cloud-sse.iexapis.com/stable/stock/{urllib.parse.quote_plus(symbol)}/quote?token={api_key}")
         response.raise_for_status()
-        logger.warning("Successfull API call")
-    except requests.RequestException:
-        logger.error("Unsuccessfull API call")
+    except requests.RequestException as e:
+        logger.error(e)
         return None
 
     # parse response

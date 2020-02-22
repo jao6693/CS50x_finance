@@ -548,6 +548,7 @@ def errorhandler(e):
         app.logger.error("http exception raised: ", e)
     else:
         e = InternalServerError()
+        app.logger.error("internal exception raised: ", e)
     return apology(e.name, e.code)
 
 # listen for errors
