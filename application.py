@@ -1,21 +1,30 @@
 import os
 import sys
+import logging
 import requests
 
 # from cs50 import SQL
 from flask import Flask, flash, json, jsonify, redirect, render_template, request, session
+from flask.logging import default_handler
 from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy import select
 from sqlalchemy.sql import func
+from logging import Formatter
 # local packages
 from models import *
 from helpers import apology, login_required, lookup, usd, percentage
 
 # configure application
 app = Flask(__name__)
+
+# create log formatter
+formatter = Formatter("%(message)s")
+default_handler.setFormatter(formatter)
+# configure Flask logger
+app.logger.addHandler(default_handler)
 
 # ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -46,15 +55,15 @@ Session(app)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///finance.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # initialize app
-print("Initializing the Flask application...")
+app.logger.debug("Initializing the Flask application...")
 # https://stackoverflow.com/questions/9692962/flask-sqlalchemy-import-context-issue/9695045#9695045
-print("Initializing the application DB...")
+app.logger.debug("Initializing the application DB...")
 db.init_app(app)
 # push the context so that DB operations are performed inside an application context
-print("Initializing the application context...")
+app.logger.debug("Initializing the application context...")
 app.app_context().push()
 # get models & create corresponding DB tables if necessary
-print("Creating/Updating the application model...")
+app.logger.debug("Creating/Updating the application model...")
 db.create_all()
 
 # make sure API key is set
@@ -69,7 +78,7 @@ else:
 @login_required
 def index():
     """Show portfolio of stocks"""
-    print("Index")
+    app.logger.debug("Index")
 
     # get current user's balance
     user_db = User.get_by_id(session["user_id"])
@@ -89,7 +98,7 @@ def index():
         transaction["name"] = transaction_db.name
         transaction["quantity"] = transaction_db.quantity
         # lookup for current price
-        api_response = lookup(transaction_db.stock)
+        api_response = lookup(transaction_db.stock, app.logger)
         price = float(api_response["price"])
         transaction["price"] = price
         # define a comparison indicator on the price (latest) vs average price (DB)
@@ -114,7 +123,7 @@ def index():
 
         grand_total += amount
 
-    print("Render Index view")
+    app.logger.debug("Render Index view")
     return render_template("index.html", transactions=transactions, cash=user_db.cash, grand_total=grand_total)
 
 @app.route("/quote", methods=["GET", "POST"])
@@ -126,41 +135,41 @@ def quote():
     example of API call:
     https://cloud.iexapis.com/stable/stock/aapl/quote?token=API_TOKEN
     """
-    print("Quote")
+    app.logger.debug("Quote")
 
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
         # consume the API to get the latest price
-        api_response = lookup(request.form.get("stock"))
+        api_response = lookup(request.form.get("stock"), app.logger)
         # check for potential errors
         if api_response is None:
             # add an explicit message to the page
             flash("Stock does not exist")
             # go back to quote page
-            print("Render Quote view from POST")
+            app.logger.debug("Render Quote view from POST")
             return render_template("quote_request.html")
         else:
             # format the amount in USD
             amount = api_response["price"]
 
-            print("Render Quote view from POST")
+            app.logger.debug("Render Quote view from POST")
             return render_template("quote_response.html", stock=api_response["symbol"], name=api_response["name"], amount=amount)
     # user reached route via GET (as by clicking a link or via redirect)
     else:
-        print("Render Quote view from GET")
+        app.logger.debug("Render Quote view from GET")
         return render_template("quote_request.html")
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
 def buy():
     """Buy shares of stock"""
-    print("Buy")
+    app.logger.debug("Buy")
 
     # user reached route via POST
     if request.method == "POST":
         validated = True
         # consume the API to get the latest price
-        api_response = lookup(request.form.get("symbol"))
+        api_response = lookup(request.form.get("symbol"), app.logger)
         # check for potential errors
         if api_response is None:
             validated = False
@@ -201,24 +210,24 @@ def buy():
                 # add an explicit message to the page
                 flash("Bought!")
                 # redirect user to home page
-                print("Redirect to Index view from POST")
+                app.logger.debug("Redirect to Index view from POST")
                 return redirect("/")
 
         if validated == False:
             # go back to buy page
-            print("Render Buy view from POST")
+            app.logger.debug("Render Buy view from POST")
             return render_template("buy.html")
 
     # user reached route via GET (as by clicking a link or via redirect)
     else:
-        print("Render Buy view from GET")
+        app.logger.debug("Render Buy view from GET")
         return render_template("buy.html")
 
 @app.route("/sell", methods=["GET", "POST"])
 @login_required
 def sell():
     """Sell shares of stock"""
-    print("Sell")
+    app.logger.debug("Sell")
 
     # get current user
     user_db = User.get_by_id(session["user_id"])
@@ -249,7 +258,7 @@ def sell():
 
         if validated == True:
             # consume the API to get the latest price
-            api_response = lookup(stock)
+            api_response = lookup(stock, app.logger)
             price = float(api_response["price"])
             # calculate the corresponding amount
             amount = quantity * price
@@ -267,22 +276,22 @@ def sell():
             # add an explicit message to the page
             flash("Sold!")
             # redirect user to home page
-            print("Redirect to Index view from POST")
+            app.logger.debug("Redirect to Index view from POST")
             return redirect("/")
         else:
-            print("Render Sell view from POST")
+            app.logger.debug("Render Sell view from POST")
             return render_template("sell.html", stocks=valid_stocks_db)
 
     # user reached route via GET (as by clicking a link or via redirect)
     else:
-        print("Render Sell view from GET")
+        app.logger.debug("Render Sell view from GET")
         return render_template("sell.html", stocks=valid_stocks_db)
 
 @app.route("/history")
 @login_required
 def history():
     """Show history of transactions"""
-    print("History")
+    app.logger.debug("History")
 
     # get current user
     user_db = User.get_by_id(session["user_id"])
@@ -300,7 +309,7 @@ def history():
         transaction["transacted"] = transaction_db.created_on
         transactions.append(transaction.copy())
 
-    print("Render History view")
+    app.logger.debug("Render History view")
     return render_template("history.html", transactions=transactions)
 
 # routes for Ajax requests
@@ -308,7 +317,7 @@ def history():
 @login_required
 def buy_1():
     """Buy 1 share of stock"""
-    print("Buy 1 share from Button")
+    app.logger.debug("Buy 1 share from Button")
 
     # user reached route via form POST
     validated = True
@@ -317,7 +326,7 @@ def buy_1():
     transaction = json.loads(request.form.get("transaction").replace("\'", "\""))
     dis_total = float(json.loads(request.form.get("grand_total").replace("\'", "\"")))
     # consume the API to get the latest price
-    api_response = lookup(transaction["stock"])
+    api_response = lookup(transaction["stock"], app.logger)
     # check for potential errors
     if api_response is None:
         validated = False
@@ -374,7 +383,7 @@ def buy_1():
 @login_required
 def sell_1():
     """Sell 1 share of stock"""
-    print("Sell 1 share from Button")
+    app.logger.debug("Sell 1 share from Button")
 
     # user reached route via form POST
     validated = True
@@ -383,7 +392,7 @@ def sell_1():
     transaction = json.loads(request.form.get("transaction").replace("\'", "\""))
     dis_total = float(json.loads(request.form.get("grand_total").replace("\'", "\"")))
     # consume the API to get the latest price
-    api_response = lookup(transaction["stock"])
+    api_response = lookup(transaction["stock"], app.logger)
     # check for potential errors
     if api_response is None:
         validated = False
@@ -441,7 +450,7 @@ def sell_1():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
-    print("Login")
+    app.logger.debug("Login")
 
     # forget any user_id
     session.clear()
@@ -456,7 +465,7 @@ def login():
             # add an explicit message to the page
             flash("invalid username or password")
             # go back to login page
-            print("Render Login view from Login POST")
+            app.logger.debug("Render Login view from Login POST")
             return render_template("login.html")
 
         # remember which user has logged in
@@ -464,30 +473,30 @@ def login():
         # add an explicit message to the page
         flash("Logged in!")
         # redirect user to home page
-        print("Redirect to Index view from Login POST")
+        app.logger.debug("Redirect to Index view from Login POST")
         return redirect("/")
 
     # user reached route via GET (as by clicking a link or via redirect)
     else:
-        print("Render Login view from Login GET")
+        app.logger.debug("Render Login view from Login GET")
         return render_template("login.html")
 
 @app.route("/logout")
 def logout():
     """Log user out"""
-    print("Logout")
+    app.logger.debug("Logout")
 
     # forget any user_id
     session.clear()
 
     # redirect user to login form
-    print("Redirect to Login view from GET")
+    app.logger.debug("Redirect to Login view from GET")
     return redirect("/")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
-    print("Register")
+    app.logger.debug("Register")
 
     # forget any user_id
     session.clear()
@@ -511,7 +520,7 @@ def register():
 
         if validated == False:
             # go back to register page
-            print("Render Register view from POST")
+            app.logger.debug("Render Register view from POST")
             return render_template("register.html")
 
         # create the user in the DB
@@ -525,12 +534,12 @@ def register():
             # add an explicit message to the page
             flash("Registered!")
             # redirect user to home page
-            print("Redirect to Index view from POST")
+            app.logger.debug("Redirect to Index view from POST")
             return redirect("/")
 
     # user reached route via GET (as by clicking a link or via redirect)
     else:
-        print("Render Register view from GET")
+        app.logger.debug("Render Register view from GET")
         return render_template("register.html")
 
 def errorhandler(e):

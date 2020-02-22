@@ -32,7 +32,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def lookup(symbol):
+def lookup(symbol, logger):
     """Look up quote for symbol."""
 
     # contact API
@@ -41,7 +41,8 @@ def lookup(symbol):
         response = requests.get(f"https://cloud-sse.iexapis.com/stable/stock/{urllib.parse.quote_plus(symbol)}/quote?token={api_key}")
         response.raise_for_status()
     except requests.RequestException as e:
-        print("Error calling API: ", e)
+        logger.error("Error calling API...")
+        logger.error(e)
         return None
 
     # parse response
