@@ -98,7 +98,7 @@ def index():
         transaction["name"] = transaction_db.name
         transaction["quantity"] = transaction_db.quantity
         # lookup for current price
-        api_response = lookup(transaction_db.stock, app.logger)
+        api_response = lookup(transaction_db.stock)
         price = float(api_response["price"])
         transaction["price"] = price
         # define a comparison indicator on the price (latest) vs average price (DB)
@@ -140,7 +140,7 @@ def quote():
     # user reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
         # consume the API to get the latest price
-        api_response = lookup(request.form.get("stock"), app.logger)
+        api_response = lookup(request.form.get("stock"))
         # check for potential errors
         if api_response is None:
             # add an explicit message to the page
@@ -169,7 +169,7 @@ def buy():
     if request.method == "POST":
         validated = True
         # consume the API to get the latest price
-        api_response = lookup(request.form.get("symbol"), app.logger)
+        api_response = lookup(request.form.get("symbol"))
         # check for potential errors
         if api_response is None:
             validated = False
@@ -258,7 +258,7 @@ def sell():
 
         if validated == True:
             # consume the API to get the latest price
-            api_response = lookup(stock, app.logger)
+            api_response = lookup(stock)
             price = float(api_response["price"])
             # calculate the corresponding amount
             amount = quantity * price
@@ -326,7 +326,7 @@ def buy_1():
     transaction = json.loads(request.form.get("transaction").replace("\'", "\""))
     dis_total = float(json.loads(request.form.get("grand_total").replace("\'", "\"")))
     # consume the API to get the latest price
-    api_response = lookup(transaction["stock"], app.logger)
+    api_response = lookup(transaction["stock"])
     # check for potential errors
     if api_response is None:
         validated = False
@@ -392,7 +392,7 @@ def sell_1():
     transaction = json.loads(request.form.get("transaction").replace("\'", "\""))
     dis_total = float(json.loads(request.form.get("grand_total").replace("\'", "\"")))
     # consume the API to get the latest price
-    api_response = lookup(transaction["stock"], app.logger)
+    api_response = lookup(transaction["stock"])
     # check for potential errors
     if api_response is None:
         validated = False
