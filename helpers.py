@@ -38,10 +38,10 @@ def lookup(symbol, logger):
     # contact API
     try:
         api_key = os.environ.get("API_KEY")
+        logger("API key used: ", api_key)
         response = requests.get(f"https://cloud-sse.iexapis.com/stable/stock/{urllib.parse.quote_plus(symbol)}/quote?token={api_key}")
         response.raise_for_status()
     except requests.RequestException as e:
-        logger.error(e)
         return None
 
     # parse response
