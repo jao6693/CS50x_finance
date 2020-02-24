@@ -51,8 +51,14 @@ Session(app)
 # configure CS50 library to use SQLite database
 # db = SQL("sqlite:///finance.db")
 
+# get DB host if exists
+if os.environ.get("DATABASE_HOST"):
+    dbhost = os.environ.get("DATABASE_HOST")
+else:
+    dbhost = ""
+
 # configure DB to interact with Flask
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///finance.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite://{dbhost}/finance.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # initialize app
 app.logger.debug("Initializing the Flask application...")
