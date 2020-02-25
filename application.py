@@ -147,7 +147,8 @@ def quote():
             flash("Stock does not exist")
             # go back to quote page
             app.logger.debug("Render Quote view from POST")
-            return render_template("quote_request.html")
+            # return to same page for full rendering
+            return redirect("/quote")
         else:
             # format the amount in USD
             amount = api_response["price"]
@@ -175,6 +176,8 @@ def buy():
             validated = False
             # add an explicit message to the page
             flash("stock does not exist")
+            # return to same page for full rendering
+            return redirect("/buy")
         else:
             # calculate the transaction amount to check whether the user can afford to purchase these stocks
             amount = float(request.form.get("shares")) * float(api_response["price"])
@@ -184,6 +187,8 @@ def buy():
                 validated = False
                 # add an explicit message to the page
                 flash("balance too low")
+                # return to same page for full rendering
+                return redirect("/buy")
             else:
                 # update the transaction & the stock tables
                 stock_db_exists = Stock.exist_by_name(name=api_response["name"])
@@ -250,11 +255,15 @@ def sell():
             validated = False
             # add an explicit message to the page
             flash("stock does not exist")
+            # return to same page for full rendering
+            return redirect("/sell")
         else:
             if stock_db.quantity < quantity:
                 validated = False
                 # add an explicit message to the page
                 flash("quantity is too high")
+                # return to same page for full rendering
+                return redirect("/sell")
 
         if validated == True:
             # consume the API to get the latest price
