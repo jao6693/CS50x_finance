@@ -52,7 +52,21 @@ Session(app)
 # db = SQL("sqlite:///finance.db")
 
 # configure DB to interact with Flask
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///finance.db"
+DB_TYPE = os.environ.get("DB_TYPE")
+if DB_TYPE == "SQLITE":
+    DB_URI = "sqlite:///finance.db"
+elif DB_TYPE == "POSTGRESQL":
+    POSTGRES_URL = os.environ.get("POSTGRES_URL")
+    POSTGRES_USER = os.environ.get("POSTGRES_USER")
+    POSTGRES_PWD = os.environ.get("POSTGRES_PWD")
+    POSTGRES_DB = os.environ.get("POSTGRES_DB")
+    # set the DB connection string
+    DB_URI = f"postgresql://{POSTGRES_USER}:{POSTGRES_PWD}@{POSTGRES_URL}/{POSTGRES_DB}"
+else:
+    # default DB is SQLITE
+    DB_URI = "sqlite:///finance.db"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = DB_URI
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # initialize app
 app.logger.debug("Initializing the Flask application...")
@@ -68,11 +82,11 @@ db.create_all()
 
 # make sure API key is set
 if os.environ.get("API_KEY"):
-    api_token = os.environ.get("API_KEY")
-    api_url_base = "https://cloud.iexapis.com/stable/stock/"
-    api_url_suffix = "/quote?token=" + api_token
+    API_TOKEN = os.environ.get("API_KEY")
+    API_URL_BASE = "https://cloud.iexapis.com/stable/stock/"
+    API_URL_SUFFIX = "/quote?token=" + API_TOKEN
 else:
-    raise RuntimeError("API_KEY not set")
+    raise RuntimeError("API key not set")
 
 @app.route("/")
 @login_required
