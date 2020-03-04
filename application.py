@@ -54,8 +54,12 @@ Session(app)
 # configure DB to interact with Flask
 DB_TYPE = os.environ.get("DB_TYPE")
 if DB_TYPE == "SQLITE":
+    app.logger.info("Using SQLITE as database")
+    # set the DB connection string
     DB_URI = "sqlite:///finance.db"
 elif DB_TYPE == "POSTGRESQL":
+    app.logger.info("Using PostgreSQL as database")
+    # retrieve env variables
     POSTGRES_URL = os.environ.get("POSTGRES_URL")
     POSTGRES_USER = os.environ.get("POSTGRES_USER")
     POSTGRES_PWD = os.environ.get("POSTGRES_PWD")
@@ -63,6 +67,7 @@ elif DB_TYPE == "POSTGRESQL":
     # set the DB connection string
     DB_URI = f"postgresql://{POSTGRES_USER}:{POSTGRES_PWD}@{POSTGRES_URL}/{POSTGRES_DB}"
 else:
+    app.logger.info("Using SQLITE as database")
     # default DB is SQLITE
     DB_URI = "sqlite:///finance.db"
 
