@@ -3,3 +3,6 @@
 
 # ignore DB file
 *.db
+
+# ignore IDE files
+*vscode*
