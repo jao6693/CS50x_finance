@@ -65,7 +65,7 @@ elif DB_TYPE == "POSTGRESQL":
     POSTGRES_PWD = os.environ.get("POSTGRES_PWD")
     POSTGRES_DB = os.environ.get("POSTGRES_DB")
     # set the DB connection string
-    DB_URI = f"postgresql://{POSTGRES_USER}:{POSTGRES_PWD}@{POSTGRES_URL}/{POSTGRES_DB}"
+    DB_URI = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PWD}@{POSTGRES_URL}/{POSTGRES_DB}"
 else:
     app.logger.info("Using SQLITE as database")
     # default DB is SQLITE
