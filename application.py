@@ -23,6 +23,7 @@ app = Flask(__name__)
 # create log formatter
 formatter = Formatter("%(message)s")
 default_handler.setFormatter(formatter)
+default_handler.setLevel(logging.INFO)
 # configure Flask logger
 app.logger.addHandler(default_handler)
 
