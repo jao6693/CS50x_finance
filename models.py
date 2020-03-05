@@ -55,8 +55,8 @@ class Stock(db.Model):
         return db.session.query(Stock.id, Stock.stock, Stock.name, \
             db.func.sum(Transaction.quantity).label("quantity"), db.func.sum(Transaction.amount).label("amount")) \
             .filter(Transaction.stock_id == Stock.id, Transaction.user_id == user_id) \
-            .group_by("Stock.id", "Stock.stock", "Stock.name") \
-            .order_by("Stock.stock") \
+            .group_by("id", "stock", "name") \
+            .order_by("stock") \
             .all()
 
     @staticmethod
