@@ -115,5 +115,5 @@ class Transaction(db.Model):
         return db.session.query(Stock.id, Stock.stock, Stock.name, \
             db.func.sum(Transaction.quantity).label("quantity"), db.func.sum(Transaction.amount).label("amount")) \
             .filter(Transaction.stock_id == Stock.id, Stock.stock == symbol, Transaction.user_id == user_id) \
-            .group_by("stock_id") \
+            .group_by(Stock.id) \
             .first()
