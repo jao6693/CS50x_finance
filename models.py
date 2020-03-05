@@ -52,10 +52,10 @@ class Stock(db.Model):
     @staticmethod
     def get_all(user_id):
         # user_id is always used to restrict selection
-        return db.session.query(Stock.id, Stock.stock, Stock.name, \
+        return db.session.query(Stock.id.label("stock_id"), Stock.stock, Stock.name, \
             db.func.sum(Transaction.quantity).label("quantity"), db.func.sum(Transaction.amount).label("amount")) \
             .filter(Transaction.stock_id == Stock.id, Transaction.user_id == user_id) \
-            .group_by("Stock.id", "stock", "name") \
+            .group_by("stock_id", "stock", "name") \
             .order_by("stock") \
             .all()
 
